@@ -2,6 +2,7 @@
 using AwesomeDevEvents.API.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AwesomeDevEvents.API.Controllers
 {
@@ -43,7 +44,9 @@ namespace AwesomeDevEvents.API.Controllers
                 return NotFound("Nenhum evento encontrado.");
             }
 
-            var devEvent = _context.DevEvents.SingleOrDefault(d => d.Id == id);
+            var devEvent = _context.DevEvents
+                .Include(de => de.Palestrantes)
+                .SingleOrDefault(d => d.Id == id);
 
             // se for nulo retorna
             if (devEvent == null)
@@ -65,6 +68,7 @@ namespace AwesomeDevEvents.API.Controllers
             }
 
             _context.DevEvents.Add(devEvent);
+            _context.SaveChanges();
 
             return CreatedAtAction(nameof(GetById), new { id = devEvent.Id }, devEvent);
         }
@@ -94,6 +98,9 @@ namespace AwesomeDevEvents.API.Controllers
 
             devEvent.Update(input.Titulo, input.Descricao, input.DataInicio, input.DataFinal);
 
+            _context.DevEvents.Update(devEvent);
+            _context.SaveChanges();
+
             return NoContent();
         }
 
@@ -116,6 +123,7 @@ namespace AwesomeDevEvents.API.Controllers
             }
 
             devEvent.Delete();
+            _context.SaveChanges();
 
             return NoContent();
 
@@ -124,14 +132,29 @@ namespace AwesomeDevEvents.API.Controllers
         [HttpPost("{id}/palestrantes")]
         public IActionResult PostPalestrantes(Guid id,DevEventPalestrantes palestrante)
         {
-            var devEvent = _context.DevEvents.SingleOrDefault(d => d.Id == id);
+            palestrante.DevEventId = id;
 
-            if (devEvent == null)
+            // Verifica se DevEvents é null
+            if (_context.DevEvents == null)
+            {
+                return NotFound("Nenhum evento encontrado.");
+            }
+
+            var devEvent = _context.DevEvents.Any(d => d.Id == id);
+
+            if (!devEvent)
             {
                 return NotFound();
             }
 
-            devEvent.Palestrantes.Add(palestrante);
+            // Verifica se DevEventPalestrantes é null
+            if (_context.DevEventPalestrantes == null)
+            {
+                return NotFound("Nenhum evento encontrado.");
+            }
+
+            _context.DevEventPalestrantes.Add(palestrante);
+            _context.SaveChanges();
 
             return NoContent();
         }

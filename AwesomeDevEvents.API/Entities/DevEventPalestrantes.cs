@@ -8,5 +8,7 @@
         public string? TituloPalestra { get; set; }
         public string? DescricaoPalestra { get; set; }
         public string? LinkedInProfile { get; set; }
+        // Foreign Key
+        public Guid DevEventId { get; set; }
     }
 }
